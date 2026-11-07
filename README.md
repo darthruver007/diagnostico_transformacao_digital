@@ -112,3 +112,5 @@ Para gerar o relatório executivo para apresentação a sócios ou diretoria:
 ## 📄 Licença
 
 Distribuído sob a licença **Apache 2.0**. Consulte o arquivo de licença correspondente para mais informações.
+
+## Link da página: https://darthruver007.github.io/diagnostico_transformacao_digital/
