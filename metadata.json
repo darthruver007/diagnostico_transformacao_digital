@@ -1,0 +1,6 @@
+{
+  "name": "Diagnóstico de Transformação Digital",
+  "description": "Aplicativo web interativo para avaliação de maturidade digital, análise de riscos, gráfico radar e plano de ação em Nuvem, ERP/CRM, IA e Segurança LGPD.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

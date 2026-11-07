@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diagnóstico de Transformação Digital | Avaliação e Laudo Estratégico</title>
+  <meta name="description" content="Aplicativo web interativo para diagnóstico de maturidade digital, análise de riscos, gráfico radar e laudo de boas práticas para PMEs e grandes empresas." />
+  <meta property="og:title" content="Diagnóstico de Transformação Digital" />
+  <meta property="og:description" content="Avalie a maturidade digital da sua empresa em Nuvem, ERP/CRM, IA e Segurança LGPD com gráfico radar e plano de ação imediato." />
+  <meta property="og:type" content="website" />
+
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              900: '#0c4a6e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* Suavização de fontes e transições */
+    body {
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Regras específicas para Impressão / Exportação PDF */
+    @media print {
+      body {
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+        font-size: 11pt !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .page-break-avoid {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+      .card-shadow {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+      #radarChartContainer {
+        max-width: 420px !important;
+        margin: 0 auto !important;
+      }
+    }
+
+    .print-only {
+      display: none;
+    }
+
+    /* Animação suave para updates do score */
+    .transition-score {
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans selection:bg-sky-500 selection:text-white">
+
+  <!-- CABEÇALHO PRINCIPAL (no-print para manter o relatório limpo ou estilizado) -->
+  <header class="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-xs no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
+          <i class="fa-solid fa-chart-line text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight text-slate-900 leading-tight">
+            Diagnóstico de Transformação Digital
+          </h1>
+          <p class="text-xs text-slate-500">
+            Consultoria Estratégica & Maturidade Tecnológica
+          </p>
+        </div>
+      </div>
+
+      <!-- Barra de Ações Rápidas -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <button 
+          id="btnCarregarDemo" 
+          type="button"
+          class="inline-flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-lg transition-all shadow-xs active:scale-95 cursor-pointer"
+          title="Carrega o cenário de problemas de infraestrutura física e planilhas isoladas"
+        >
+          <i class="fa-solid fa-bolt text-amber-600"></i>
+          <span>Carregar Caso Exemplo (Demo)</span>
+        </button>
+
+        <button 
+          id="btnImprimir" 
+          type="button"
+          class="inline-flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-all shadow-xs active:scale-95 cursor-pointer"
+          title="Imprimir ou Salvar Laudo em PDF"
+        >
+          <i class="fa-solid fa-print"></i>
+          <span class="hidden sm:inline">Imprimir / Salvar PDF</span>
+          <span class="sm:hidden">PDF</span>
+        </button>
+
+        <button 
+          id="btnResetar" 
+          type="button"
+          class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
+          title="Limpar formulário"
+        >
+          <i class="fa-solid fa-rotate-left"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CABEÇALHO EXCLUSIVO PARA IMPRESSÃO -->
+  <div class="print-only p-6 border-b border-slate-300 mb-6">
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Relatório Executivo de Maturidade Digital</h1>
+        <p class="text-sm text-slate-600">Diagnóstico Estratégico de TI, Nuvem, ERP/CRM, IA e Segurança</p>
+      </div>
+      <div class="text-right text-xs text-slate-500">
+        <p><strong>Emissão:</strong> <span id="printDate"></span></p>
+        <p><strong>Classificação:</strong> Confidencial / Interno</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+
+    <!-- BANNER HERO DE APRESENTAÇÃO E ORIENTAÇÃO (no-print) -->
+    <div class="no-print bg-gradient-to-r from-slate-900 via-sky-950 to-indigo-950 text-white rounded-2xl p-6 sm:p-8 mb-8 shadow-xl relative overflow-hidden">
+      <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl pointer-events-none">
+        <i class="fa-solid fa-microchip"></i>
+      </div>
+      <div class="max-w-3xl relative z-10">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 text-xs font-semibold mb-3 border border-sky-400/30">
+          <i class="fa-solid fa-compass"></i> Diagnóstico Interativo 360°
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-2">
+          Descubra a Real Maturidade Digital da sua Empresa
+        </h2>
+        <p class="text-sm sm:text-base text-slate-300 leading-relaxed mb-4">
+          Responda às 12 questões divididas nos <strong>4 pilares essenciais</strong> da transformação moderna. Obtenha instantaneamente o cálculo de riscos, visualização em <strong>Gráfico Radar</strong> e um <strong>Laudo Executivo de Boas Práticas</strong> com roadmap de ação imediata.
+        </p>
+        <div class="flex flex-wrap items-center gap-4 text-xs text-slate-300">
+          <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-400"></i> Score em Tempo Real</span>
+          <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-400"></i> Linguagem Didática</span>
+          <span class="flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-emerald-400"></i> 100% Local (Sem Envio de Dados)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICAÇÃO TOAST FLUTUANTE DE CASO DEMO (no-print) -->
+    <div id="demoToast" class="no-print hidden fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-sm px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-3">
+      <span class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+        <i class="fa-solid fa-circle-info"></i>
+      </span>
+      <div>
+        <p class="font-semibold text-white">Cenário Demo Carregado!</p>
+        <p class="text-xs text-slate-400">Simulando empresa com servidores físicos e planilhas isoladas.</p>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 1: FORMULÁRIO DE DADOS DA EMPRESA -->
+    <section class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs mb-8 card-shadow page-break-avoid">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center font-bold">
+            <i class="fa-solid fa-building text-base"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-900">Perfil da Organização</h3>
+            <p class="text-xs text-slate-500">Identificação para contextualização do diagnóstico e laudo executivo</p>
+          </div>
+        </div>
+        <span class="text-xs px-2.5 py-1 font-semibold rounded-md bg-slate-100 text-slate-600">
+          Passo 1 de 2
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div>
+          <label for="empresaNome" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            Nome da Empresa / Organização
+          </label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <i class="fa-regular fa-building text-sm"></i>
+            </span>
+            <input 
+              type="text" 
+              id="empresaNome" 
+              placeholder="Ex: Alfa Logística & Comércio" 
+              value=""
+              class="w-full pl-9 pr-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all text-slate-800 placeholder-slate-400"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label for="empresaSetor" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            Setor de Atuação
+          </label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <i class="fa-solid fa-industry text-sm"></i>
+            </span>
+            <select 
+              id="empresaSetor" 
+              class="w-full pl-9 pr-8 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all text-slate-800 cursor-pointer appearance-none"
+            >
+              <option value="" disabled selected>Selecione o setor...</option>
+              <option value="Comércio e Varejo">Comércio e Varejo</option>
+              <option value="Indústria e Manufatura">Indústria e Manufatura</option>
+              <option value="Serviços Profissionais">Serviços Profissionais / Consultoria</option>
+              <option value="Saúde e Clínicas">Saúde, Clínicas e Farmacêutica</option>
+              <option value="Logística e Transporte">Logística, Transporte e Distribuição</option>
+              <option value="Educação">Educação e Treinamentos</option>
+              <option value="Agronegócio">Agronegócio</option>
+              <option value="Tecnologia e Software">Tecnologia, SaaS e Inovação</option>
+              <option value="Financeiro e Seguros">Financeiro, Contábil e Seguros</option>
+              <option value="Outro">Outro Ramo</option>
+            </select>
+            <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+              <i class="fa-solid fa-chevron-down text-xs"></i>
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <label for="empresaPorte" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            Porte da Empresa
+          </label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <i class="fa-solid fa-users text-sm"></i>
+            </span>
+            <select 
+              id="empresaPorte" 
+              class="w-full pl-9 pr-8 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all text-slate-800 cursor-pointer appearance-none"
+            >
+              <option value="" disabled selected>Selecione o porte...</option>
+              <option value="Microempresa / MEI (1 a 9 colaboradores)">Microempresa / MEI (1 a 9 colaboradores)</option>
+              <option value="Pequena Empresa (10 a 49 colaboradores)">Pequena Empresa (10 a 49 colaboradores)</option>
+              <option value="Média Empresa (50 a 249 colaboradores)">Média Empresa (50 a 249 colaboradores)</option>
+              <option value="Grande Empresa (250+ colaboradores)">Grande Empresa (250+ colaboradores)</option>
+            </select>
+            <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+              <i class="fa-solid fa-chevron-down text-xs"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAINEL DE VISÃO GERAL / SCORE EM TEMPO REAL E GRÁFICO RADAR -->
+    <section class="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/80 shadow-xs mb-10 card-shadow page-break-avoid">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-slate-100 pb-6 mb-6">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2" id="badgeNivelMaturidade">
+            <!-- Injetado dinamicamente -->
+          </div>
+          <h3 class="text-2xl font-black text-slate-900 tracking-tight" id="tituloMaturidade">
+            Diagnóstico em Andamento
+          </h3>
+          <p class="text-sm text-slate-500 mt-1" id="subtituloMaturidade">
+            Responda às questões abaixo para atualizar o cálculo e o gráfico de radar automaticamente.
+          </p>
+        </div>
+
+        <!-- Indicador Geral Numérico -->
+        <div class="flex items-center gap-6 bg-slate-50 p-4 rounded-xl border border-slate-200/70">
+          <div>
+            <p class="text-xs uppercase font-bold text-slate-500 tracking-wider">Índice Geral</p>
+            <div class="flex items-baseline gap-1">
+              <span id="scorePercentual" class="text-4xl font-extrabold text-slate-900">0%</span>
+              <span class="text-xs text-slate-400 font-semibold" id="scoreFracao">(0/36 pts)</span>
+            </div>
+          </div>
+          <div class="w-16 h-16 rounded-full flex items-center justify-center font-bold text-lg text-white shadow-md" id="circuloScore">
+            <i class="fa-solid fa-gauge-high"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barra de Progresso Geral -->
+      <div class="w-full bg-slate-100 rounded-full h-3 mb-6 overflow-hidden">
+        <div id="barraProgressoGeral" class="h-full rounded-full transition-score bg-slate-300 w-0"></div>
+      </div>
+
+      <!-- Eixos e Gráfico Radar -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <!-- 4 Barras Parciais por Pilar -->
+        <div class="lg:col-span-6 space-y-4">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Desempenho por Dimensão Estratégica</h4>
+          
+          <!-- Pilar 1: Nuvem -->
+          <div class="p-3.5 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-slate-50 transition-all">
+            <div class="flex justify-between items-center mb-1.5 text-sm">
+              <span class="font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-cloud text-sky-500"></i> 1. Nuvem & Infraestrutura
+              </span>
+              <span id="scorePilarNuvemText" class="font-bold text-slate-700">0% (0/9 pts)</span>
+            </div>
+            <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+              <div id="barraPilarNuvem" class="h-full bg-sky-500 transition-score w-0"></div>
+            </div>
+          </div>
+
+          <!-- Pilar 2: ERP/CRM -->
+          <div class="p-3.5 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-slate-50 transition-all">
+            <div class="flex justify-between items-center mb-1.5 text-sm">
+              <span class="font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-database text-indigo-500"></i> 2. Gestão Integrada (ERP & CRM)
+              </span>
+              <span id="scorePilarErpText" class="font-bold text-slate-700">0% (0/9 pts)</span>
+            </div>
+            <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+              <div id="barraPilarErp" class="h-full bg-indigo-500 transition-score w-0"></div>
+            </div>
+          </div>
+
+          <!-- Pilar 3: IA & Automação -->
+          <div class="p-3.5 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-slate-50 transition-all">
+            <div class="flex justify-between items-center mb-1.5 text-sm">
+              <span class="font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-robot text-purple-500"></i> 3. Inteligência Artificial & Automação
+              </span>
+              <span id="scorePilarIaText" class="font-bold text-slate-700">0% (0/9 pts)</span>
+            </div>
+            <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+              <div id="barraPilarIa" class="h-full bg-purple-500 transition-score w-0"></div>
+            </div>
+          </div>
+
+          <!-- Pilar 4: Segurança & LGPD -->
+          <div class="p-3.5 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-slate-50 transition-all">
+            <div class="flex justify-between items-center mb-1.5 text-sm">
+              <span class="font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-shield-halved text-emerald-600"></i> 4. Segurança & LGPD
+              </span>
+              <span id="scorePilarSegurancaText" class="font-bold text-slate-700">0% (0/9 pts)</span>
+            </div>
+            <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+              <div id="barraPilarSeguranca" class="h-full bg-emerald-500 transition-score w-0"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gráfico Radar Chart.js -->
+        <div class="lg:col-span-6 flex flex-col items-center justify-center p-3 sm:p-5 bg-slate-50/60 rounded-2xl border border-slate-100" id="radarChartContainer">
+          <div class="w-full flex items-center justify-between mb-2 px-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Mapeamento em Radar (4 Pilares)</span>
+            <span class="text-xs text-slate-400"><i class="fa-solid fa-circle-dot text-sky-500 mr-1"></i>Tempo Real</span>
+          </div>
+          <div class="w-full max-w-[340px] sm:max-w-[380px] h-[300px] sm:h-[320px] relative">
+            <canvas id="radarChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO 2: QUESTIONÁRIO COMPLETO COM OS 4 CARDS DOS PILARES -->
+    <div class="mb-10">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h3 class="text-xl font-black text-slate-900 tracking-tight">Questionário de Avaliação (12 Perguntas Didáticas)</h3>
+          <p class="text-xs sm:text-sm text-slate-500">Cada dimensão contém 3 questões conceituadas com explicações detalhadas para rápida compreensão de leigos.</p>
+        </div>
+        <span class="text-xs font-semibold px-3 py-1 bg-sky-100 text-sky-800 rounded-full hidden sm:inline-block">
+          <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Pontuação Automática
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+        <!-- ========================================== -->
+        <!-- CARD PILAR 1: NUVEM & INFRAESTRUTURA -->
+        <!-- ========================================== -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col card-shadow page-break-avoid">
+          <!-- Topo com imagem representativa seed/cloud + ícone e cantos arredondados -->
+          <div class="relative h-44 overflow-hidden bg-slate-900">
+            <img 
+              src="https://picsum.photos/seed/cloud/400/200" 
+              alt="Computação em Nuvem e Infraestrutura Ágil" 
+              class="w-full h-full object-cover opacity-80 hover:scale-105 transition-transform duration-700"
+              loading="lazy"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent"></div>
+            <div class="absolute bottom-4 left-5 right-5 flex items-center justify-between text-white">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-sky-500/90 backdrop-blur-xs flex items-center justify-center text-white shadow-lg">
+                  <i class="fa-solid fa-cloud text-lg"></i>
+                </div>
+                <div>
+                  <span class="text-[10px] font-extrabold tracking-widest uppercase text-sky-300">Pilar 01</span>
+                  <h4 class="text-lg font-bold text-white leading-tight">Nuvem & Infraestrutura</h4>
+                </div>
+              </div>
+              <span class="text-xs bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-md text-white font-medium">3 Perguntas</span>
+            </div>
+          </div>
+
+          <!-- Corpo do Card com 3 Perguntas -->
+          <div class="p-6 space-y-6 flex-1 flex flex-col justify-between">
+            
+            <!-- Pergunta 1 -->
+            <div class="border-b border-slate-100 pb-5">
+              <label for="q1" class="block text-sm font-bold text-slate-900 mb-1">
+                1. Onde estão hospedados os principais sistemas e arquivos da sua empresa?
+              </label>
+              <!-- Didática obrigatória -->
+              <p class="text-xs text-slate-500 italic mt-1">
+                <i class="fa-regular fa-circle-question mr-1 text-sky-500"></i>
+                <strong>O que significa e por que importa:</strong> Avalia se o negócio depende de uma máquina física no escritório sujeita a queima, falta de energia, alagamento ou furto, ou se utiliza data centers modernos e elásticos que garantem disponibilidade 24 horas por dia.
+              </p>
+              <div class="mt-2.5">
+                <select id="q1" class="question-select w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-sky-500 focus:bg-white focus:outline-none transition-all">
+                  <option value="0">0 - Servidor físico local antigo no escritório ou computadores individuais sem replicação (Alto Risco)</option>
+                  <option value="1">1 - Servidor local com cópias manuais esporádicas em HDs externos</option>
+                  <option value="2">2 - Ambiente híbrido (algumas ferramentas em nuvem, mas sistemas críticos ainda locais)</option>
+                  <option value="3">3 - 100% em Nuvem gerenciada e elástica (AWS, Google Cloud ou Azure) com alta disponibilidade</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Pergunta 2 -->
+            <div class="border-b border-slate-100 pb-5">
+              <label for="q2" class="block text-sm font-bold text-slate-900 mb-1">
+                2. Como funciona a rotina de backups e recuperação de desastres (DRP)?
+              </label>
+              <!-- Didática obrigatória -->
+              <p class="text-xs text-slate-500 italic mt-1">
+                <i class="fa-regular fa-circle-question mr-1 text-sky-500"></i>
+                <strong>O que significa e por que importa:</strong> Se um vírus sequestrador (ransomware) ou falha catastrófica apagar os dados da empresa hoje, em quanto tempo a operação é restaurada sem perder pedidos, notas fiscais ou cadastros?
+              </p>
+              <div class="mt-2.5">
+                <select id="q2" class="question-select w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-sky-500 focus:bg-white focus:outline-none transition-all">
+                  <option value="0">0 - Não temos rotina formal de backup ou nunca testamos a restauração prática</option>
+                  <option value="1">1 - Backups manuais ocasionais gravados em pen drives ou HDs mantidos no próprio escritório</option>
+                  <option value="2">2 - Backups automatizados diários na nuvem, porém sem testes periódicos de restauração</option>
+                  <option value="3">3 - Backup contínuo/automatizado em regiões geográficas distintas com testes de recuperação trimestrais</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Pergunta 3 -->
+            <div>
+              <label for="q3" class="block text-sm font-bold text-slate-900 mb-1">
+                3. Acesso remoto e colaboração de arquivos fora do escritório:
+              </label>
+              <!-- Didática obrigatória -->
+              <p class="text-xs text-slate-500 italic mt-1">
+                <i class="fa-regular fa-circle-question mr-1 text-sky-500"></i>
+                <strong>O que significa e por que importa:</strong> Mede se a equipe consegue produzir de qualquer lugar do mundo com segurança e agilidade, ou se depende de gambiarras e presença física para acessar pastas de trabalho.
+              </p>
+              <div class="mt-2.5">
+                <select id="q3" class="question-select w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-sky-500 focus:bg-white focus:outline-none transition-all">
+                  <option value="0">0 - Arquivos e sistemas só podem ser acessados fisicamente dentro do prédio da empresa</option>
+                  <option value="1">1 - Acesso remoto improvisado (AnyDesk / TeamViewer / PCs deixados ligados na empresa)</option>
+                  <option value="2">2 - Uso de pastas compartilhadas na nuvem (Google Drive/OneDrive), mas sem controle de permissões rígido</option>
+                  <option value="3">3 - Plataforma corporativa unificada em nuvem (M365/Google Workspace) com MFA e gestão de dispositivos</option>
+                </select>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- CARD PILAR 2: GESTÃO INTEGRADA (ERP & CRM) -->
+        <!-- ========================================== -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col card-shadow page-break-avoid">
+          <!-- Topo com imagem representativa seed/data + ícone e cantos arredondados -->
+          <div class="relative h-44 overflow-hidden bg-slate-900">
+            <img 
+              src="https://picsum.photos/seed/data/400/200" 
+              alt="Integração de Dados e Gestão ERP e CRM" 
+              class="w-full h-full object-cover opacity-80 hover:scale-105 transition-transform duration-700"
+              loading="lazy"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent"></div>
+            <div class="absolute bottom-4 left-5 right-5 flex items-center justify-between text-white">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/90 backdrop-blur-xs flex items-center justify-center text-white shadow-lg">
+                  <i class="fa-solid fa-database text-lg"></i>
+                </div>
+                <div>
+                  <span class="text-[10px] font-extrabold tracking-widest uppercase text-indigo-300">Pilar 02</span>
+                  <h4 class="text-lg font-bold text-white leading-tight">ERP, CRM & Dados</h4>
+                </div>
+              </div>
+              <span class="text-xs bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-md text-white font-medium">3 Perguntas</span>
+            </div>
+          </div>
+
+          <!-- Corpo do Card com 3 Perguntas -->
+          <div class="p-6 space-y-6 flex-1 flex flex-col justify-between">
+            
+            <!-- Pergunta 4 -->
+            <div class="border-b border-slate-100 pb-5">
+              <label for="q4" class="block text-sm font-bold text-slate-900 mb-1">
+                4. Como é feito o controle financeiro, faturamento e estoque da empresa?
+              </label>
+              <!-- Didática obrigatória -->
+              <p class="text-xs text-slate-500 italic mt-1">
+                <i class="fa-regular fa-circle-question mr-1 text-indigo-500"></i>
+                <strong>O que significa e por que importa:</strong> Analisa se a gestão vive no "caos das planilhas isoladas", onde números de vendas e financeiro não batem, ou se existe um sistema único (ERP) que elimina retrabalhos e rombos de caixa.
+              </p>
+              <div class="mt-2.5">
+                <select id="q4" class="question-select w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-all">
+                  <option value="0">0 - Caderno de papel ou dezenas de planilhas Excel soltas, desatualizadas e sem sincronia</option>
+                  <option value="1">1 - Software financeiro básico isolado, mas estoque, compras e faturamento ainda em planilhas</option>
+                  <option value="2">2 - Sistema ERP contratado, porém mal configurado, com equipe usando planilhas paralelas</option>
+                  <option value="3">3 - ERP moderno 100% integrado (fiscal, compras, estoque e financeiro operando em tempo real)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Pergunta 5 -->
+            <div class="border-b border-slate-100 pb-5">
+              <label for="q5" class="block text-sm font-bold text-slate-900 mb-1">
+                5. Como os clientes e oportunidades de venda são gerenciados (CRM)?
+              </label>
+              <!-- Didática obrigatória -->
+              <p class="text-xs text-slate-500 italic mt-1">
+                <i class="fa-regular fa-circle-question mr-1 text-indigo-500"></i>
+                <strong>O que significa e por que importa:</strong> Revela se a carteira de clientes pertence de fato à empresa ou se o histórico de conversas e propostas fica perdido no WhatsApp e na cabeça de cada vendedor.
+              </p>
+              <div class="mt-2.5">
+                <select id="q5" class="question-select w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-all">
+                  <option value="0">0 - Contatos salvos apenas no celular pessoal dos vendedores; sem registro de negócios perdidos</option>
+                  <option value="1">1 - Planilha compartilhada de clientes preenchida esporadicamente sem funil de vendas ativo</option>
+                  <option value="2">2 - Software CRM contratado, mas parte da equipe resiste ao uso e negociações fogem do sistema</option>
+                  <option value="3">3 - CRM moderno integrado com WhatsApp, telefonia, e-mail, funil de vendas e histórico completo</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Pergunta 6 -->
+            <div>
+              <label for="q6" class="block text-sm font-bold text-slate-900 mb-1">
+                6. Como a diretoria acompanha indicadores e toma decisões (Business Intelligence)?
+              </label>
+              <!-- Didática obrigatória -->
+              <p class="text-xs text-slate-500 italic mt-1">
+                <i class="fa-regular fa-circle-question mr-1 text-indigo-500"></i>
+                <strong>O que significa e por que importa:</strong> Mede se os líderes navegam a empresa por "feeling" e achismo com relatórios atrasados de fim de mês, ou com painéis visuais atualizados automaticamente.
+              </p>
+              <div class="mt-2.5">
+                <select id="q6" class="question-select w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-all">
+                  <option value="0">0 - Decisões no "feeling" e intuição; não há relatórios gerenciais consolidados</option>
+                  <option value="1">1 - Relatórios manuais demoram dias para serem consolidados no fim de cada mês em planilhas</option>
+                  <option value="2">2 - Relatórios básicos gerados pelo próprio ERP/financeiro, mas sem cruzamento estratégico</option>
+                  <option value="3">3 - Dashboards em tempo real (Power BI, Looker ou similar) com KPIs atualizados de margem e receita</option>
+                </select>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- CARD PILAR 3: IA & AUTOMAÇÃO -->
+        <!-- ========================================== -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col card-shadow page-break-avoid">
+          <!-- Topo com imagem representativa seed/robot + ícone e cantos arredondados -->
+          <div class="relative h-44 overflow-hidden bg-slate-900">
+            <img 
+              src="https://picsum.photos/seed/robot/400/200" 
+              alt="Inteligência Artificial e Automação de Processos" 
+              class="w-full h-full object-cover opacity-80 hover:scale-105 transition-transform duration-700"
+              loading="lazy"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent"></div>
+            <div class="absolute bottom-4 left-5 right-5 flex items-center justify-between text-white">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-purple-500/90 backdrop-blur-xs flex items-center justify-center text-white shadow-lg">
+                  <i class="fa-solid fa-robot text-lg"></i>
+                </div>
+                <div>
+                  <span class="text-[10px] font-extrabold tracking-widest uppercase text-purple-300">Pilar 03</span>
+                  <h4 class="text-lg font-bold text-white leading-tight">Inteligência Artificial & Automação</h4>
+                </div>
+              </div>
+              <span class="text-xs bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-md text-white font-medium">3 Perguntas</span>
+            </div>
+          </div>
+
+          <!-- Corpo do Card com 3 Perguntas -->
+          <div class="p-6 space-y-6 flex-1 flex flex-col justify-between">
+            
+            <!-- Pergunta 7 -->
+            <div class="border-b border-slate-100 pb-5">
+              <label for="q7" class="block text-sm font-bold text-slate-900 mb-1">
+                7. Qual o nível de automação em tarefas repetitivas e rotinas operacionais?
+              </label>
+              <!-- Didática obrigatória -->
+              <p class="text-xs text-slate-500 italic mt-1">
+                <i class="fa-regular fa-circle-question mr-1 text-purple-500"></i>
+                <strong>O que significa e por que importa:</strong> Mostra se colaboradores qualificados estão perdendo centenas de horas digitando notas fiscais, copiando e colando dados entre sistemas ou enviando cobranças manuais.
+              </p>
+              <div class="mt-2.5">
+                <select id="q7" class="question-select w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-purple-500 focus:bg-white focus:outline-none transition-all">
+                  <option value="0">0 - Quase 100% das tarefas operacionais, cadastros e lançamentos são manuais e repetitivos</option>
+                  <option value="1">1 - Automações isoladas e pontuais (ex: filtros básicos de e-mail ou macros antigas de Excel)</option>
+                  <option value="2">2 - Uso de integradores no-code (Make, Zapier, Webhooks) conectando alguns formulários e sistemas</option>
+                  <option value="3">3 - Fluxos automatizados ponta a ponta (RPA/APIs), com regras de negócio, emissão e cobrança autônomas</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Pergunta 8 -->
+            <div class="border-b border-slate-100 pb-5">
+              <label for="q8" class="block text-sm font-bold text-slate-900 mb-1">
+                8. Como funciona o atendimento e suporte aos clientes nos canais digitais?
+              </label>
+              <!-- Didática obrigatória -->
+              <p class="text-xs text-slate-500 italic mt-1">
+                <i class="fa-regular fa-circle-question mr-1 text-purple-500"></i>
+                <strong>O que significa e por que importa:</strong> Clientes esperam respostas em minutos. Atendimento lento ou ausente fora do expediente faz a concorrência fechar negócios na sua frente.
+              </p>
+              <div class="mt-2.5">
+                <select id="q8" class="question-select w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-purple-500 focus:bg-white focus:outline-none transition-all">
+                  <option value="0">0 - Atendimento exclusivamente manual; fora do horário comercial o cliente fica sem suporte</option>
+                  <option value="1">1 - Respostas automáticas padrão do WhatsApp ("Olá, responderemos quando possível")</option>
+                  <option value="2">2 - Chatbot tradicional baseado em árvore rígida de menus ("digite 1 para compras, 2 para suporte")</option>
+                  <option value="3">3 - Agentes de IA Generativa treinados com catálogo e políticas, resolvendo 70%+ dos chamados 24/7</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Pergunta 9 -->
+            <div>
+              <label for="q9" class="block text-sm font-bold text-slate-900 mb-1">
+                9. Como a equipe utiliza ferramentas de IA Generativa (ChatGPT, Copilot, Gemini)?
+              </label>
+              <!-- Didática obrigatória -->
+              <p class="text-xs text-slate-500 italic mt-1">
+                <i class="fa-regular fa-circle-question mr-1 text-purple-500"></i>
+                <strong>O que significa e por que importa:</strong> Mede o ganho real de produtividade na redação de propostas, análise de contratos, síntese de reuniões e criação de conteúdo, com diretrizes contra vazamento de segredos.
+              </p>
+              <div class="mt-2.5">
+                <select id="q9" class="question-select w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-purple-500 focus:bg-white focus:outline-none transition-all">
+                  <option value="0">0 - Ninguém utiliza ou a empresa proibiu expressamente sem oferecer alternativas modernas</option>
+                  <option value="1">1 - Uso individual, desordenado e informal de versões gratuitas sem diretrizes de governança</option>
+                  <option value="2">2 - Licenças corporativas contratadas para áreas específicas com treinamento introdutório</option>
+                  <option value="3">3 - IA incorporada no fluxo de trabalho diário com biblioteca de prompts internos e métricas de ROI</option>
+                </select>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- CARD PILAR 4: SEGURANÇA DA INFORMAÇÃO & LGPD -->
+        <!-- ========================================== -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col card-shadow page-break-avoid">
+          <!-- Topo com imagem representativa seed/lock + ícone e cantos arredondados -->
+          <div class="relative h-44 overflow-hidden bg-slate-900">
+            <img 
+              src="https://picsum.photos/seed/lock/400/200" 
+              alt="Segurança da Informação e Conformidade LGPD" 
+              class="w-full h-full object-cover opacity-80 hover:scale-105 transition-transform duration-700"
+              loading="lazy"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent"></div>
+            <div class="absolute bottom-4 left-5 right-5 flex items-center justify-between text-white">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-600/90 backdrop-blur-xs flex items-center justify-center text-white shadow-lg">
+                  <i class="fa-solid fa-shield-halved text-lg"></i>
+                </div>
+                <div>
+                  <span class="text-[10px] font-extrabold tracking-widest uppercase text-emerald-300">Pilar 04</span>
+                  <h4 class="text-lg font-bold text-white leading-tight">Segurança & LGPD</h4>
+                </div>
+              </div>
+              <span class="text-xs bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-md text-white font-medium">3 Perguntas</span>
+            </div>
+          </div>
+
+          <!-- Corpo do Card com 3 Perguntas -->
+          <div class="p-6 space-y-6 flex-1 flex flex-col justify-between">
+            
+            <!-- Pergunta 10 -->
+            <div class="border-b border-slate-100 pb-5">
+              <label for="q10" class="block text-sm font-bold text-slate-900 mb-1">
+                10. Como são gerenciados os acessos, senhas e credenciais de colaboradores?
+              </label>
+              <!-- Didática obrigatória -->
+              <p class="text-xs text-slate-500 italic mt-1">
+                <i class="fa-regular fa-circle-question mr-1 text-emerald-600"></i>
+                <strong>O que significa e por que importa:</strong> Mais de 80% dos ataques começam com senhas fracas ou compartilhadas. Controlar quem acessa o quê e revogar permissões de ex-funcionários na mesma hora é a blindagem essencial.
+              </p>
+              <div class="mt-2.5">
+                <select id="q10" class="question-select w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none transition-all">
+                  <option value="0">0 - Senhas simples anotadas em post-its ou senhas mestras compartilhadas entre várias pessoas</option>
+                  <option value="1">1 - Cada colaborador cria senhas sem regras de complexidade; desligamentos demoram a ser revogados</option>
+                  <option value="2">2 - Política formal de senhas fortes e cancelamento centralizado de contas de ex-colaboradores</option>
+                  <option value="3">3 - Autenticação Multifator (MFA/2FA) mandatória para todos, cofre de senhas e Single Sign-On (SSO)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Pergunta 11 -->
+            <div class="border-b border-slate-100 pb-5">
+              <label for="q11" class="block text-sm font-bold text-slate-900 mb-1">
+                11. Qual o nível de adequação à LGPD (Lei Geral de Proteção de Dados)?
+              </label>
+              <!-- Didática obrigatória -->
+              <p class="text-xs text-slate-500 italic mt-1">
+                <i class="fa-regular fa-circle-question mr-1 text-emerald-600"></i>
+                <strong>O que significa e por que importa:</strong> Avalia se a empresa coleta e trata dados de clientes dentro da lei, prevenindo multas severas da ANPD (até 2% do faturamento), processos trabalhistas e perda irremediável de reputação.
+              </p>
+              <div class="mt-2.5">
+                <select id="q11" class="question-select w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none transition-all">
+                  <option value="0">0 - Nenhuma providência tomada; dados de clientes circulam livremente em grupos de WhatsApp</option>
+                  <option value="1">1 - Apenas texto genérico de política de privacidade no site, sem mapeamento de dados real</option>
+                  <option value="2">2 - Mapeamento preliminar (ROPA) realizado e contratos com fornecedores revisados</option>
+                  <option value="3">3 - Programa contínuo de privacidade com DPO/Encarregado, gestão de consentimento e canal ao titular</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Pergunta 12 -->
+            <div>
+              <label for="q12" class="block text-sm font-bold text-slate-900 mb-1">
+                12. Proteção de computadores (antivírus corporativo) e treinamento da equipe contra golpes:
+              </label>
+              <!-- Didática obrigatória -->
+              <p class="text-xs text-slate-500 italic mt-1">
+                <i class="fa-regular fa-circle-question mr-1 text-emerald-600"></i>
+                <strong>O que significa e por que importa:</strong> Computadores sem proteção centralizada e colaboradores desatentos são o alvo preferido de e-mails falsos (phishing) com boletos adulterados e vírus que travam a empresa.
+              </p>
+              <div class="mt-2.5">
+                <select id="q12" class="question-select w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none transition-all">
+                  <option value="0">0 - Sem proteção gerenciada; uso de computadores pessoais no trabalho sem qualquer controle</option>
+                  <option value="1">1 - Antivírus doméstico gratuito instalado em apenas algumas máquinas sem painel central</option>
+                  <option value="2">2 - Antivírus corporativo instalado em todos os equipamentos, porém sem treinamentos contra golpes</option>
+                  <option value="3">3 - EDR moderno gerenciado na nuvem, firewall ativo, atualizações automáticas e simulações periódicas</option>
+                </select>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SEÇÃO 3: LAUDO DE BOAS PRÁTICAS E PLANO DE AÇÃO DETALHADO -->
+    <section id="secaoLaudo" class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-xs mb-10 card-shadow page-break-avoid">
+      <div class="border-b border-slate-100 pb-5 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold">
+            <i class="fa-solid fa-clipboard-check text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold text-slate-900">Laudo Técnico & Recomendações de Boas Práticas</h3>
+            <p class="text-xs text-slate-500">Análise diagnóstica detalhada categorizada por severidade e impacto estratégico</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-100 text-slate-700" id="laudoEmpresaInfo">
+            Empresa: Em Diagnóstico
+          </span>
+        </div>
+      </div>
+
+      <!-- Resumo Executivo em Destaque -->
+      <div id="resumoExecutivoTexto" class="p-5 rounded-xl bg-slate-50 border border-slate-200/70 mb-8 text-sm leading-relaxed text-slate-700">
+        <!-- Preenchido via JS -->
+      </div>
+
+      <!-- Grid com Alertas Vibrantes: Riscos Graves, Atenção e Boas Práticas -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+        
+        <!-- CARD 1: RISCOS GRAVES (bg-rose-500) -->
+        <div class="bg-rose-50/40 rounded-2xl border border-rose-200 overflow-hidden flex flex-col page-break-avoid">
+          <div class="bg-rose-500 px-5 py-3.5 text-white flex items-center justify-between">
+            <div class="flex items-center gap-2 font-bold text-sm tracking-wide">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span>RISCOS GRAVES</span>
+            </div>
+            <span id="contadorRiscosGraves" class="text-xs font-black bg-white/20 px-2 py-0.5 rounded-full">0 itens</span>
+          </div>
+          <div class="p-5 flex-1">
+            <p class="text-xs text-rose-800 font-medium mb-3">
+              Vulnerabilidades críticas que colocam a operação ou reputação da empresa sob risco iminente de paralisação ou prejuízo severo:
+            </p>
+            <ul id="listaRiscosGraves" class="space-y-2.5 text-xs text-slate-700">
+              <!-- Itens injetados via JS -->
+            </ul>
+          </div>
+        </div>
+
+        <!-- CARD 2: PONTOS DE ATENÇÃO (bg-amber-400 / bg-amber-500) -->
+        <div class="bg-amber-50/40 rounded-2xl border border-amber-200 overflow-hidden flex flex-col page-break-avoid">
+          <div class="bg-amber-400 px-5 py-3.5 text-slate-900 flex items-center justify-between">
+            <div class="flex items-center gap-2 font-bold text-sm tracking-wide">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+              <span>PONTOS DE ATENÇÃO</span>
+            </div>
+            <span id="contadorAtencao" class="text-xs font-black bg-slate-900/10 px-2 py-0.5 rounded-full">0 itens</span>
+          </div>
+          <div class="p-5 flex-1">
+            <p class="text-xs text-amber-900 font-medium mb-3">
+              Processos intermediários, manuais ou com ferramentas isoladas que freiam a produtividade e geram gargalos de crescimento:
+            </p>
+            <ul id="listaAtencao" class="space-y-2.5 text-xs text-slate-700">
+              <!-- Itens injetados via JS -->
+            </ul>
+          </div>
+        </div>
+
+        <!-- CARD 3: BOAS PRÁTICAS IDENTIFICADAS (bg-emerald-500) -->
+        <div class="bg-emerald-50/40 rounded-2xl border border-emerald-200 overflow-hidden flex flex-col page-break-avoid">
+          <div class="bg-emerald-500 px-5 py-3.5 text-white flex items-center justify-between">
+            <div class="flex items-center gap-2 font-bold text-sm tracking-wide">
+              <i class="fa-solid fa-circle-check"></i>
+              <span>BOAS PRÁTICAS</span>
+            </div>
+            <span id="contadorBoasPraticas" class="text-xs font-black bg-white/20 px-2 py-0.5 rounded-full">0 itens</span>
+          </div>
+          <div class="p-5 flex-1">
+            <p class="text-xs text-emerald-900 font-medium mb-3">
+              Fortalezas e maturidade tecnológica consolidadas onde a empresa já se destaca com processos eficientes:
+            </p>
+            <ul id="listaBoasPraticas" class="space-y-2.5 text-xs text-slate-700">
+              <!-- Itens injetados via JS -->
+            </ul>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- CRONOGRAMA E ROADMAP ESTRATÉGICO DE PRIORIDADES (30, 60 e 90 Dias) -->
+      <div class="page-break-avoid">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-7 h-7 rounded-lg bg-sky-600 text-white flex items-center justify-center text-xs">
+            <i class="fa-solid fa-route"></i>
+          </div>
+          <h4 class="text-base font-bold text-slate-900">Roadmap Sugerido de Transformação Digital</h4>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <!-- 30 Dias -->
+          <div class="p-5 rounded-xl border border-slate-200 bg-white shadow-2xs">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-black uppercase tracking-wider text-rose-600 bg-rose-50 px-2.5 py-1 rounded-md border border-rose-200">
+                1º Mês (0 - 30 Dias)
+              </span>
+              <span class="text-xs text-slate-400 font-semibold">Fase 1: Estancar Riscos</span>
+            </div>
+            <h5 class="text-sm font-bold text-slate-800 mb-2">Segurança Básica & Blindagem</h5>
+            <ul id="plano30Dias" class="space-y-2 text-xs text-slate-600 list-disc list-inside">
+              <!-- Injetado dinamicamente -->
+            </ul>
+          </div>
+
+          <!-- 60 Dias -->
+          <div class="p-5 rounded-xl border border-slate-200 bg-white shadow-2xs">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-black uppercase tracking-wider text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
+                2º Mês (31 - 60 Dias)
+              </span>
+              <span class="text-xs text-slate-400 font-semibold">Fase 2: Integração</span>
+            </div>
+            <h5 class="text-sm font-bold text-slate-800 mb-2">Unificação de Sistemas & CRM/ERP</h5>
+            <ul id="plano60Dias" class="space-y-2 text-xs text-slate-600 list-disc list-inside">
+              <!-- Injetado dinamicamente -->
+            </ul>
+          </div>
+
+          <!-- 90 Dias -->
+          <div class="p-5 rounded-xl border border-slate-200 bg-white shadow-2xs">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                3º Mês (61 - 90 Dias)
+              </span>
+              <span class="text-xs text-slate-400 font-semibold">Fase 3: Escala & IA</span>
+            </div>
+            <h5 class="text-sm font-bold text-slate-800 mb-2">Automação Inteligente & BI</h5>
+            <ul id="plano90Dias" class="space-y-2 text-xs text-slate-600 list-disc list-inside">
+              <!-- Injetado dinamicamente -->
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- RODAPÉ DE PRIVACY BY DESIGN (Conforme requisito obrigatório) -->
+  <footer class="bg-white border-t border-slate-200 mt-auto py-8 text-center text-slate-500 text-xs page-break-avoid">
+    <div class="max-w-4xl mx-auto px-4">
+      <div class="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-700 font-semibold mb-3 border border-slate-200/60">
+        <i class="fa-solid fa-lock text-sky-600"></i>
+        <span>Privacy by Design & Soberania dos Dados</span>
+      </div>
+      <p class="text-slate-600 leading-relaxed max-w-2xl mx-auto mb-2">
+        <strong>Garantia de Privacidade:</strong> Toda a lógica de diagnóstico, cálculo de maturidade e geração de laudo é processada <strong>100% no seu navegador</strong> (Client-Side). Nenhum dado corporativo, nome de empresa ou respostas são transmitidos para servidores remotos, garantindo total conformidade com a LGPD e sigilo empresarial.
+      </p>
+      <p class="text-slate-400 text-[11px]">
+        Desenvolvido com padrões de Engenharia de Software Sênior &bull; Versão 2.4 Enterprise &bull; HTML5, TailwindCSS, Chart.js & Vanilla JS
+      </p>
+    </div>
+  </footer>
+
+  <!-- LÓGICA JAVASCRIPT VANILLA COMPLETA -->
+  <script>
+    // Definição das 12 Perguntas e Textos de Diagnóstico
+    const DIAGNOSTICO_CONFIG = {
+      q1: {
+        pilar: 'nuvem',
+        nome: 'Hospedagem e Servidores',
+        textos: {
+          0: { tipo: 'risco', desc: 'Dependência de servidor físico antigo ou computadores sem redundância. Risco alto de queima e parada total da empresa.' },
+          1: { tipo: 'atencao', desc: 'Servidor local com cópias manuais esporádicas. Vulnerável a erros humanos e esquecimento.' },
+          2: { tipo: 'atencao', desc: 'Ambiente híbrido com sistemas críticos ainda locais. Necessidade de acelerar migração para nuvem.' },
+          3: { tipo: 'boa_pratica', desc: 'Infraestrutura 100% em nuvem elástica gerenciada (AWS/GCP/Azure) com alta disponibilidade.' }
+        }
+      },
+      q2: {
+        pilar: 'nuvem',
+        nome: 'Backups e Recuperação de Desastres (DRP)',
+        textos: {
+          0: { tipo: 'risco', desc: 'Ausência de rotina de backup formal ou testes de restauração. Um ataque de ransomware apagará dados permanentemente.' },
+          1: { tipo: 'risco', desc: 'Backups em mídias físicas no próprio local (HD externo/pendrive). Em caso de sinistro físico ou furto, tudo é perdido.' },
+          2: { tipo: 'atencao', desc: 'Backup em nuvem configurado, porém sem testes periódicos de restauração para validar integridade.' },
+          3: { tipo: 'boa_pratica', desc: 'Backups contínuos multirregião e plano DRP validado com testes práticos de restauração.' }
+        }
+      },
+      q3: {
+        pilar: 'nuvem',
+        nome: 'Acesso Remoto e Trabalho Colaborativo',
+        textos: {
+          0: { tipo: 'risco', desc: 'Impossibilidade de trabalho remoto seguro. Toda a operação depende da presença física no prédio.' },
+          1: { tipo: 'risco', desc: 'Uso de ferramentas improvisadas (AnyDesk/PCs deixados ligados). Abre brechas críticas para invasores.' },
+          2: { tipo: 'atencao', desc: 'Armazenamento em nuvem utilizado sem controle fino de permissões e compartilhamentos públicos.' },
+          3: { tipo: 'boa_pratica', desc: 'Plataforma corporativa moderna (M365/Google Workspace) com MFA e gerenciamento centralizado.' }
+        }
+      },
+      q4: {
+        pilar: 'erp',
+        nome: 'Controle Financeiro, Estoque e Faturamento (ERP)',
+        textos: {
+          0: { tipo: 'risco', desc: 'Controle por dezenas de planilhas soltas ou papel. Gera furos de caixa, atrasos fiscais e retrabalho massivo.' },
+          1: { tipo: 'atencao', desc: 'Software financeiro isolado operando em ilha com estoque e vendas ainda em planilhas.' },
+          2: { tipo: 'atencao', desc: 'ERP contratado subutilizado, com equipes mantendo controles paralelos que desviam a verdade dos dados.' },
+          3: { tipo: 'boa_pratica', desc: 'ERP integrado de ponta a ponta: faturamento, fiscal, estoque e compras unificados em tempo real.' }
+        }
+      },
+      q5: {
+        pilar: 'erp',
+        nome: 'Gestão de Relacionamento e Vendas (CRM)',
+        textos: {
+          0: { tipo: 'risco', desc: 'Contatos e negociações presos apenas no celular dos vendedores. A saída de um colaborador leva a carteira embora.' },
+          1: { tipo: 'atencao', desc: 'Planilha estática de clientes sem pipeline ou gestão ativa de oportunidades comerciais.' },
+          2: { tipo: 'atencao', desc: 'CRM disponível mas sem adesão total da equipe, com negócios ocorrendo fora do sistema.' },
+          3: { tipo: 'boa_pratica', desc: 'CRM omnichannel adotado por 100% da equipe comercial com funil e histórico unificado.' }
+        }
+      },
+      q6: {
+        pilar: 'erp',
+        nome: 'Tomada de Decisão e Relatórios (BI)',
+        textos: {
+          0: { tipo: 'risco', desc: 'Decisões tomadas exclusivamente no "feeling". Falta clareza imediata sobre margens e lucratividade real.' },
+          1: { tipo: 'atencao', desc: 'Dias perdidos ao final de cada mês para tabular relatórios manuais defasados.' },
+          2: { tipo: 'atencao', desc: 'Relatórios estáticos do próprio sistema, sem cruzamento estratégico de tendências e custos.' },
+          3: { tipo: 'boa_pratica', desc: 'Dashboards automatizados (Power BI/Looker) fornecendo KPIs estratégicos atualizados diariamente.' }
+        }
+      },
+      q7: {
+        pilar: 'ia',
+        nome: 'Automação de Processos Repetitivos',
+        textos: {
+          0: { tipo: 'risco', desc: 'Operação inteiramente manual. Alto custo de mão de obra desperdiçado em digitação e retrabalho.' },
+          1: { tipo: 'atencao', desc: 'Apenas regras simples de e-mail ou macros antigas de planilha sem integração moderna.' },
+          2: { tipo: 'atencao', desc: 'Automações pontuais no-code (Make/Zapier) ativas, mas sem monitoramento sistemático de falhas.' },
+          3: { tipo: 'boa_pratica', desc: 'Workflows ponta a ponta integrados (RPA/APIs) com regras de negócios autônomas.' }
+        }
+      },
+      q8: {
+        pilar: 'ia',
+        nome: 'Atendimento e Suporte Inteligente',
+        textos: {
+          0: { tipo: 'atencao', desc: 'Atendimento exclusivamente manual em horário comercial. Leads e clientes perdidos fora do expediente.' },
+          1: { tipo: 'atencao', desc: 'Apenas mensagens de saudação no WhatsApp sem capacidade de resolução de dúvidas.' },
+          2: { tipo: 'atencao', desc: 'Chatbot básico de botões com navegação engessada que frequentemente frustra o cliente.' },
+          3: { tipo: 'boa_pratica', desc: 'Agente inteligente com IA Generativa treinado com catálogo de serviços, resolvendo chamados 24/7.' }
+        }
+      },
+      q9: {
+        pilar: 'ia',
+        nome: 'Adoção Corporativa de IA Generativa',
+        textos: {
+          0: { tipo: 'atencao', desc: 'Sem uso de IA ou proibição generalizada, perdendo até 30% de produtividade frente aos concorrentes.' },
+          1: { tipo: 'risco', desc: 'Uso informal de contas pessoais gratuitas sem política de sigilo, arriscando vazamento de dados internos.' },
+          2: { tipo: 'atencao', desc: 'Licenças corporativas em áreas piloto com potencial ainda subaproveitado.' },
+          3: { tipo: 'boa_pratica', desc: 'IA nativamente integrada às rotinas corporativas com biblioteca de prompts e governança clara.' }
+        }
+      },
+      q10: {
+        pilar: 'seguranca',
+        nome: 'Autenticação, Senhas e Controle de Acessos',
+        textos: {
+          0: { tipo: 'risco', desc: 'Senhas compartilhadas e post-its em monitores. Maior porta de entrada para invasões e vazamentos.' },
+          1: { tipo: 'risco', desc: 'Sem regras de complexidade e demora para revogar acessos de colaboradores desligados.' },
+          2: { tipo: 'atencao', desc: 'Controle de senhas formalizado, porém sem exigência de segundo fator (MFA) em contas vitais.' },
+          3: { tipo: 'boa_pratica', desc: 'Autenticação Multifator (MFA/2FA) mandatória, Single Sign-On (SSO) e cofre de senhas.' }
+        }
+      },
+      q11: {
+        pilar: 'seguranca',
+        nome: 'Adequação à LGPD e Proteção de Dados',
+        textos: {
+          0: { tipo: 'risco', desc: 'Total ausência de governança de dados pessoais. Alto risco de multas da ANPD e ações indenizatórias.' },
+          1: { tipo: 'risco', desc: 'Apenas política de privacidade de fachada copiada na web sem governança prática interna.' },
+          2: { tipo: 'atencao', desc: 'Mapeamento de dados iniciado, necessitando institucionalizar canal ao titular e contratos.' },
+          3: { tipo: 'boa_pratica', desc: 'Programa contínuo de privacidade com DPO/Encarregado e governança de consentimento ativa.' }
+        }
+      },
+      q12: {
+        pilar: 'seguranca',
+        nome: 'Proteção de Endpoint e Treinamento Antigolpes',
+        textos: {
+          0: { tipo: 'risco', desc: 'Computadores sem proteção gerenciada ou uso irrestrito de máquinas pessoais desprotegidas.' },
+          1: { tipo: 'risco', desc: 'Antivírus doméstico gratuito sem atualização automática ou console central de alertas.' },
+          2: { tipo: 'atencao', desc: 'Antivírus corporativo instalado, porém colaboradores sem treinamento contra golpes de phishing.' },
+          3: { tipo: 'boa_pratica', desc: 'EDR gerenciado em nuvem, firewall de borda e campanhas periódicas de conscientização contra golpes.' }
+        }
+      }
+    };
+
+    // Variáveis Globais
+    let radarChartInstance = null;
+
+    // Inicialização do Gráfico Radar (Chart.js)
+    function initRadarChart() {
+      const ctx = document.getElementById('radarChart').getContext('2d');
+      
+      radarChartInstance = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: ['1. Nuvem & Infra', '2. ERP & CRM', '3. IA & Automação', '4. Segurança & LGPD'],
+          datasets: [{
+            label: 'Nível de Maturidade (%)',
+            data: [0, 0, 0, 0],
+            backgroundColor: 'rgba(2, 132, 199, 0.25)', // Sky blue com transparência
+            borderColor: '#0284c7',
+            pointBackgroundColor: '#0369a1',
+            pointBorderColor: '#ffffff',
+            pointHoverBackgroundColor: '#ffffff',
+            pointHoverBorderColor: '#0284c7',
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            borderWidth: 2.5,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              angleLines: {
+                color: '#e2e8f0',
+                lineWidth: 1
+              },
+              grid: {
+                color: '#f1f5f9',
+                circular: true
+              },
+              suggestedMin: 0,
+              suggestedMax: 100,
+              ticks: {
+                stepSize: 25,
+                backdropColor: 'transparent',
+                color: '#64748b',
+                font: {
+                  size: 10
+                },
+                callback: function(val) {
+                  return val + '%';
+                }
+              },
+              pointLabels: {
+                font: {
+                  size: 11,
+                  weight: '600'
+                },
+                color: '#334155'
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              titleFont: { size: 12, weight: 'bold' },
+              bodyFont: { size: 12 },
+              padding: 10,
+              displayColors: false,
+              callbacks: {
+                label: function(context) {
+                  return 'Maturidade: ' + context.raw + '%';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Função de Recálculo em Tempo Real
+    function calcularDiagnostico() {
+      // Coleta os valores das 12 perguntas
+      const scores = {};
+      let totalPts = 0;
+      const maxTotalPts = 36; // 12 perguntas * 3 pontos max
+
+      const pilares = {
+        nuvem: { pts: 0, max: 9, nome: 'Nuvem & Infraestrutura' },
+        erp: { pts: 0, max: 9, nome: 'Gestão Integrada (ERP & CRM)' },
+        ia: { pts: 0, max: 9, nome: 'Inteligência Artificial & Automação' },
+        seguranca: { pts: 0, max: 9, nome: 'Segurança & LGPD' }
+      };
+
+      const riscosGraves = [];
+      const atencoes = [];
+      const boasPraticas = [];
+
+      for (let i = 1; i <= 12; i++) {
+        const qId = 'q' + i;
+        const selectElem = document.getElementById(qId);
+        const val = parseInt(selectElem.value, 10) || 0;
+        scores[qId] = val;
+        totalPts += val;
+
+        const config = DIAGNOSTICO_CONFIG[qId];
+        pilares[config.pilar].pts += val;
+
+        const info = config.textos[val];
+        const itemObj = {
+          qNum: i,
+          nome: config.nome,
+          desc: info.desc,
+          valor: val
+        };
+
+        if (info.tipo === 'risco') {
+          riscosGraves.push(itemObj);
+        } else if (info.tipo === 'atencao') {
+          atencoes.push(itemObj);
+        } else if (info.tipo === 'boa_pratica') {
+          boasPraticas.push(itemObj);
+        }
+      }
+
+      // Percentuais
+      const percGeral = Math.round((totalPts / maxTotalPts) * 100);
+      const percNuvem = Math.round((pilares.nuvem.pts / pilares.nuvem.max) * 100);
+      const percErp = Math.round((pilares.erp.pts / pilares.erp.max) * 100);
+      const percIa = Math.round((pilares.ia.pts / pilares.ia.max) * 100);
+      const percSeg = Math.round((pilares.seguranca.pts / pilares.seguranca.max) * 100);
+
+      // Atualiza Indicador Geral
+      document.getElementById('scorePercentual').innerText = percGeral + '%';
+      document.getElementById('scoreFracao').innerText = `(${totalPts}/${maxTotalPts} pts)`;
+      
+      const barraGeral = document.getElementById('barraProgressoGeral');
+      barraGeral.style.width = percGeral + '%';
+
+      // Cores da Barra Geral e Círculo com base na gravidade
+      const circuloScore = document.getElementById('circuloScore');
+      const badgeNivel = document.getElementById('badgeNivelMaturidade');
+      const tituloMaturidade = document.getElementById('tituloMaturidade');
+      const subtituloMaturidade = document.getElementById('subtituloMaturidade');
+
+      if (percGeral <= 30) {
+        barraGeral.className = 'h-full rounded-full transition-score bg-rose-500';
+        circuloScore.className = 'w-16 h-16 rounded-full flex items-center justify-center font-bold text-lg text-white shadow-md bg-rose-500';
+        badgeNivel.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 bg-rose-100 text-rose-800 border border-rose-300';
+        badgeNivel.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Nível 1: Inicial / Crítico';
+        tituloMaturidade.innerText = 'Operação em Risco & Vulnerabilidade Digital';
+        subtituloMaturidade.innerText = 'Alta dependência de processos manuais, planilhas isoladas e infraestrutura física vulnerável.';
+      } else if (percGeral <= 60) {
+        barraGeral.className = 'h-full rounded-full transition-score bg-amber-400';
+        circuloScore.className = 'w-16 h-16 rounded-full flex items-center justify-center font-bold text-lg text-slate-900 shadow-md bg-amber-400';
+        badgeNivel.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 bg-amber-100 text-amber-900 border border-amber-300';
+        badgeNivel.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> Nível 2: Operacional / Parcial';
+        tituloMaturidade.innerText = 'Maturidade Tática com Gargalos de Integração';
+        subtituloMaturidade.innerText = 'Existem ferramentas em uso, porém trabalham em ilhas isoladas sem integração entre CRM, ERP e IA.';
+      } else if (percGeral <= 85) {
+        barraGeral.className = 'h-full rounded-full transition-score bg-sky-500';
+        circuloScore.className = 'w-16 h-16 rounded-full flex items-center justify-center font-bold text-lg text-white shadow-md bg-sky-600';
+        badgeNivel.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 bg-sky-100 text-sky-800 border border-sky-300';
+        badgeNivel.innerHTML = '<i class="fa-solid fa-chart-line"></i> Nível 3: Estruturado / Integrado';
+        tituloMaturidade.innerText = 'Transformação Digital em Expansão';
+        subtituloMaturidade.innerText = 'Infraestrutura moderna e gestão consistente. O próximo passo é maximizar o uso de IA e automação autônoma.';
+      } else {
+        barraGeral.className = 'h-full rounded-full transition-score bg-emerald-500';
+        circuloScore.className = 'w-16 h-16 rounded-full flex items-center justify-center font-bold text-lg text-white shadow-md bg-emerald-600';
+        badgeNivel.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 bg-emerald-100 text-emerald-800 border border-emerald-300';
+        badgeNivel.innerHTML = '<i class="fa-solid fa-trophy"></i> Nível 4: Inovador / Data-Driven';
+        tituloMaturidade.innerText = 'Excelência Tecnológica & Liderança de Mercado';
+        subtituloMaturidade.innerText = 'Nuvem resiliente, governança LGPD contínua, processos orientados a dados e IA integrada ao core da empresa.';
+      }
+
+      // Atualiza Barras por Pilar
+      document.getElementById('scorePilarNuvemText').innerText = `${percNuvem}% (${pilares.nuvem.pts}/9 pts)`;
+      document.getElementById('barraPilarNuvem').style.width = percNuvem + '%';
+
+      document.getElementById('scorePilarErpText').innerText = `${percErp}% (${pilares.erp.pts}/9 pts)`;
+      document.getElementById('barraPilarErp').style.width = percErp + '%';
+
+      document.getElementById('scorePilarIaText').innerText = `${percIa}% (${pilares.ia.pts}/9 pts)`;
+      document.getElementById('barraPilarIa').style.width = percIa + '%';
+
+      document.getElementById('scorePilarSegurancaText').innerText = `${percSeg}% (${pilares.seguranca.pts}/9 pts)`;
+      document.getElementById('barraPilarSeguranca').style.width = percSeg + '%';
+
+      // Atualiza Dados do Radar Chart
+      if (radarChartInstance) {
+        radarChartInstance.data.datasets[0].data = [percNuvem, percErp, percIa, percSeg];
+        radarChartInstance.update();
+      }
+
+      // Atualiza Info da Empresa no Laudo
+      const empNome = document.getElementById('empresaNome').value.trim() || 'Empresa em Avaliação';
+      const empSetor = document.getElementById('empresaSetor').value || 'Setor não informado';
+      const empPorte = document.getElementById('empresaPorte').value || 'Porte não informado';
+      document.getElementById('laudoEmpresaInfo').innerText = `${empNome} | ${empSetor} | ${empPorte}`;
+
+      // Atualiza Laudo Detalhado: Contadores e Listas
+      renderLaudoDetalhado(empNome, percGeral, riscosGraves, atencoes, boasPraticas, pilares);
+    }
+
+    // Renderiza as seções do Laudo com Alertas Coloridos Vibrantes
+    function renderLaudoDetalhado(empNome, percGeral, riscos, atencoes, boasPraticas, pilares) {
+      // 1. Resumo Executivo Dinâmico
+      const resumoContainer = document.getElementById('resumoExecutivoTexto');
+      let statusTexto = '';
+      if (percGeral <= 30) {
+        statusTexto = `<strong class="text-rose-600 font-bold">ALERTA CRÍTICO:</strong> A avaliação de <strong>${empNome}</strong> totalizou <strong>${percGeral}%</strong> de maturidade digital. A operação apresenta vulnerabilidades severas que demandam contenção emergencial, especialmente em infraestrutura física sem redundância, fragmentação de controles e ausência de blindagem de segurança/LGPD.`;
+      } else if (percGeral <= 60) {
+        statusTexto = `<strong class="text-amber-600 font-bold">AVALIAÇÃO DE TRANSIÇÃO:</strong> A empresa <strong>${empNome}</strong> atingiu <strong>${percGeral}%</strong> de maturidade. Há iniciativas operacionais em andamento, porém grande perda de fôlego devido à falta de integração entre sistemas (silos de informação) e automações pontuais ainda imaturas.`;
+      } else if (percGeral <= 85) {
+        statusTexto = `<strong class="text-sky-600 font-bold">AVALIAÇÃO ESTRUTURADA:</strong> A empresa <strong>${empNome}</strong> apresenta <strong>${percGeral}%</strong> de maturidade. As fundações de nuvem e segurança estão bem encaminhadas. O foco estratégico agora é aprofundar a inteligência de negócios (BI) e a adoção massiva de inteligência artificial generativa.`;
+      } else {
+        statusTexto = `<strong class="text-emerald-600 font-bold">EXCELÊNCIA TECNOLÓGICA:</strong> Com <strong>${percGeral}%</strong> de maturidade, <strong>${empNome}</strong> opera com padrões de alta maturidade digital. O objetivo agora é manter a governança contínua, inovação em produtos digitais e exploração de novos modelos de receita habilitados por tecnologia.`;
+      }
+      resumoContainer.innerHTML = statusTexto;
+
+      // 2. Riscos Graves (bg-rose-500)
+      document.getElementById('contadorRiscosGraves').innerText = `${riscos.length} vulnerabilidades`;
+      const listaRiscos = document.getElementById('listaRiscosGraves');
+      if (riscos.length === 0) {
+        listaRiscos.innerHTML = `<li class="p-2.5 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+          <i class="fa-solid fa-check-circle text-emerald-500"></i> Nenhuma vulnerabilidade crítica imediata identificada!
+        </li>`;
+      } else {
+        listaRiscos.innerHTML = riscos.map(r => `
+          <li class="p-2.5 rounded-lg bg-white border-l-4 border-rose-500 shadow-2xs">
+            <span class="font-bold text-slate-800 block mb-0.5 text-xs">Questão ${r.qNum}: ${r.nome}</span>
+            <span class="text-slate-600 leading-tight block">${r.desc}</span>
+          </li>
+        `).join('');
+      }
+
+      // 3. Pontos de Atenção (bg-amber-400 / bg-amber-500)
+      document.getElementById('contadorAtencao').innerText = `${atencoes.length} itens`;
+      const listaAtencao = document.getElementById('listaAtencao');
+      if (atencoes.length === 0) {
+        listaAtencao.innerHTML = `<li class="p-2.5 rounded-lg bg-slate-100 text-slate-600 text-xs">Sem gargalos intermediários apontados.</li>`;
+      } else {
+        listaAtencao.innerHTML = atencoes.map(a => `
+          <li class="p-2.5 rounded-lg bg-white border-l-4 border-amber-400 shadow-2xs">
+            <span class="font-bold text-slate-800 block mb-0.5 text-xs">Questão ${a.qNum}: ${a.nome}</span>
+            <span class="text-slate-600 leading-tight block">${a.desc}</span>
+          </li>
+        `).join('');
+      }
+
+      // 4. Boas Práticas (bg-emerald-500)
+      document.getElementById('contadorBoasPraticas').innerText = `${boasPraticas.length} fortalezas`;
+      const listaBoasPrat = document.getElementById('listaBoasPraticas');
+      if (boasPraticas.length === 0) {
+        listaBoasPrat.innerHTML = `<li class="p-2.5 rounded-lg bg-amber-50 text-amber-800 text-xs">
+          Ainda não foram registrados itens de excelência máxima. O plano abaixo ajudará na estruturação.
+        </li>`;
+      } else {
+        listaBoasPrat.innerHTML = boasPraticas.map(b => `
+          <li class="p-2.5 rounded-lg bg-white border-l-4 border-emerald-500 shadow-2xs">
+            <span class="font-bold text-slate-800 block mb-0.5 text-xs">Questão ${b.qNum}: ${b.nome}</span>
+            <span class="text-slate-600 leading-tight block">${b.desc}</span>
+          </li>
+        `).join('');
+      }
+
+      // 5. Roadmap 30 / 60 / 90 Dias Personalizado
+      renderRoadmap(riscos, atencoes, boasPraticas);
+    }
+
+    // Geração do Roadmap Prático de 30, 60 e 90 dias
+    function renderRoadmap(riscos, atencoes, boasPraticas) {
+      const p30 = document.getElementById('plano30Dias');
+      const p60 = document.getElementById('plano60Dias');
+      const p90 = document.getElementById('plano90Dias');
+
+      let itens30 = [];
+      let itens60 = [];
+      let itens90 = [];
+
+      // Análise inteligente para 30 dias (Urgências e Mitigação de Riscos)
+      itens30.push('Ativação mandatória de Autenticação Multifator (2FA) em e-mails e sistemas críticos.');
+      itens30.push('Configuração de rotina de backup em nuvem criptografada independente do escritório.');
+      itens30.push('Auditoria de senhas compartilhadas e revogação imediata de credenciais de ex-colaboradores.');
+      itens30.push('Inventário das planilhas críticas de controle financeiro e estoque para contenção de inconsistências.');
+
+      // 60 Dias (Integração e Estruturação de Sistemas)
+      itens60.push('Implantação ou migração de ERP em nuvem unificando compras, faturamento e contas a pagar/receber.');
+      itens60.push('Padronização do CRM de vendas com pipeline ativo e canal integrado de WhatsApp corporativo.');
+      itens60.push('Adequação de contratos e termos de consentimento à LGPD com mapeamento inicial de dados.');
+      itens60.push('Eliminação de acessos remotos improvisados (AnyDesk) em favor de VPN ou M365/Google Workspace.');
+
+      // 90 Dias (Inovação, Automação e IA)
+      itens90.push('Criação de Dashboards de Gestão em tempo real (Power BI / Looker) conectados ao banco de dados.');
+      itens90.push('Implementação de fluxos de automação de notas fiscais, cobrança e conciliação bancária (Make / RPA).');
+      itens90.push('Treinamento corporativo no uso seguro de IA Generativa para elaboração de propostas e atendimento 24/7.');
+      itens90.push('Simulação periódica de phishing para manter a equipe alerta contra engenharia social.');
+
+      p30.innerHTML = itens30.map(item => `<li>${item}</li>`).join('');
+      p60.innerHTML = itens60.map(item => `<li>${item}</li>`).join('');
+      p90.innerHTML = itens90.map(item => `<li>${item}</li>`).join('');
+    }
+
+    // Carregar Caso Exemplo (Demo): Focado em problemas de infraestrutura e planilhas isoladas
+    function carregarCasoDemo() {
+      // Preenchimento de perfil
+      document.getElementById('empresaNome').value = 'Distribuidora Modelo & Logística LTDA';
+      document.getElementById('empresaSetor').value = 'Comércio e Varejo';
+      document.getElementById('empresaPorte').value = 'Pequena Empresa (10 a 49 colaboradores)';
+
+      // 12 Respostas configuradas para o case de problemas de infraestrutura física, planilhas isoladas e senhas soltas:
+      // Q1: Servidor físico antigo no escritório (0)
+      document.getElementById('q1').value = '0';
+      // Q2: Backup manual ocasional em HD externo guardado no armário (1)
+      document.getElementById('q2').value = '1';
+      // Q3: Acesso remoto improvisado via AnyDesk em PCs ligados (1)
+      document.getElementById('q3').value = '1';
+      // Q4: Várias planilhas Excel desatualizadas para estoque e financeiro (0)
+      document.getElementById('q4').value = '0';
+      // Q5: Clientes e contatos salvos no celular pessoal dos vendedores sem CRM (0)
+      document.getElementById('q5').value = '0';
+      // Q6: Relatórios manuais demorados em planilhas ao fim de cada mês (1)
+      document.getElementById('q6').value = '1';
+      // Q7: Quase todas as tarefas operacionais manuais (0)
+      document.getElementById('q7').value = '0';
+      // Q8: Apenas mensagem automática de WhatsApp fora do expediente (1)
+      document.getElementById('q8').value = '1';
+      // Q9: Uso informal de contas pessoais gratuitas sem diretrizes (1)
+      document.getElementById('q9').value = '1';
+      // Q10: Senhas anotadas em post-its e senhas compartilhadas (0)
+      document.getElementById('q10').value = '0';
+      // Q11: Apenas texto genérico de política no site sem adequação prática à LGPD (1)
+      document.getElementById('q11').value = '1';
+      // Q12: Antivírus gratuito doméstico em apenas algumas máquinas sem painel central (1)
+      document.getElementById('q12').value = '1';
+
+      // Executa cálculo imediato
+      calcularDiagnostico();
+
+      // Mostra toast visual
+      const toast = document.getElementById('demoToast');
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 4500);
+
+      // Rola suavemente até a seção de laudo e score
+      document.getElementById('radarChartContainer').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Resetar Formulário
+    function resetarFormulario() {
+      if (confirm('Deseja limpar todos os campos e reiniciar o diagnóstico?')) {
+        document.getElementById('empresaNome').value = '';
+        document.getElementById('empresaSetor').selectedIndex = 0;
+        document.getElementById('empresaPorte').selectedIndex = 0;
+        for (let i = 1; i <= 12; i++) {
+          document.getElementById('q' + i).selectedIndex = 0;
+        }
+        calcularDiagnostico();
+      }
+    }
+
+    // Botão Imprimir / Exportar PDF
+    function imprimirRelatorio() {
+      // Atualiza data do cabeçalho de impressão
+      const agora = new Date();
+      const dataFormatada = agora.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      document.getElementById('printDate').innerText = dataFormatada;
+
+      // Chama a janela de impressão nativa
+      window.print();
+    }
+
+    // Inicialização ao carregar o DOM
+    document.addEventListener('DOMContentLoaded', () => {
+      initRadarChart();
+
+      // Ouvintes de evento nos selects para atualização em tempo real
+      const selects = document.querySelectorAll('.question-select');
+      selects.forEach(sel => {
+        sel.addEventListener('change', calcularDiagnostico);
+      });
+
+      // Ouvintes nos inputs de perfil da empresa
+      document.getElementById('empresaNome').addEventListener('input', calcularDiagnostico);
+      document.getElementById('empresaSetor').addEventListener('change', calcularDiagnostico);
+      document.getElementById('empresaPorte').addEventListener('change', calcularDiagnostico);
+
+      // Botões de Ação
+      document.getElementById('btnCarregarDemo').addEventListener('click', carregarCasoDemo);
+      document.getElementById('btnImprimir').addEventListener('click', imprimirRelatorio);
+      document.getElementById('btnResetar').addEventListener('click', resetarFormulario);
+
+      // Cálculo inicial
+      calcularDiagnostico();
+    });
+  </script>
+</body>
+</html>
